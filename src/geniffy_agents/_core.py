@@ -60,7 +60,7 @@ def default_client() -> Any:
             if old.is_closed():
                 _shared.pop(key, None)
         from geniffy import AsyncGeniffy
-        held = _shared[id(loop)] = (loop, AsyncGeniffy())
+        held = _shared[id(loop)] = (loop, _made(AsyncGeniffy))
     return held[1]
 
 
@@ -104,3 +104,13 @@ def last_user_text(items: Any) -> str:
             if words:
                 return words
     return ""
+
+
+def _made(cls: Any) -> Any:
+    """A client of the geniffy SDK, named after this package, so the Requests page in the Geniffy app shows
+    which integration made each call. A geniffy before 0.2.0 has no name to give, and makes a plain client."""
+    from . import __version__
+    try:
+        return cls(integration=f"openai-agents-geniffy/{__version__}")
+    except TypeError:
+        return cls()
