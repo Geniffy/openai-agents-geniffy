@@ -1,0 +1,37 @@
+[build-system]
+requires = ["hatchling>=1.27"]
+build-backend = "hatchling.build"
+
+[project]
+name = "openai-agents-geniffy"
+version = "0.1.0"
+description = "Geniffy for the OpenAI Agents SDK: a memory of each of your users, for any agent. Memory in the instructions, and tools."
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Geniffy", email = "ops@geniffy.com" }]
+keywords = ["openai", "agents", "openai-agents", "memory", "geniffy"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Topic :: Software Development :: Libraries",
+]
+dependencies = ["openai-agents>=0.23,<1", "geniffy>=0.1.1"]
+
+[project.optional-dependencies]
+test = ["pytest>=7"]
+
+[project.urls]
+Homepage = "https://geniffy.com"
+Documentation = "https://docs.geniffy.com/integrations/openai-agents-sdk"
+Repository = "https://github.com/Geniffy/openai-agents-geniffy"
+Issues = "https://github.com/Geniffy/openai-agents-geniffy/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/geniffy_agents"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
