@@ -5,9 +5,9 @@
 # Geniffy for the OpenAI Agents SDK
 
 Give an agent built with the OpenAI Agents SDK a memory of each of your users. Before each model call, the
-model is told what is known about the user that bears on their latest message, each line with where it came
-from; after the run, save the exchange. When nothing is known, the model is told so, and says so instead of
-guessing.
+model gets the user's briefing: where things stand, what is due, the rules that apply, what happened, and what is
+known that bears on their latest message. After the run, save it, tool calls included, into one memory for the
+whole conversation. When nothing is known, the model is told so, and says so instead of guessing.
 
 [![CI](https://github.com/Geniffy/openai-agents-geniffy/actions/workflows/ci.yml/badge.svg)](https://github.com/Geniffy/openai-agents-geniffy/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/openai-agents-geniffy)](https://pypi.org/project/openai-agents-geniffy/)
@@ -24,7 +24,7 @@ Set `GENIFFY_API_KEY` from **API keys** in the [Geniffy app](https://geniffy.com
 ```python
 from dataclasses import dataclass
 
-from agents import Agent, Runner
+from agents import Agent, Runner, SQLiteSession
 from geniffy_agents import GeniffyMemory
 
 
@@ -37,20 +37,32 @@ memory = GeniffyMemory(space=lambda user: f"user_{user.id}")      # read from th
 agent = Agent[User](name="Assistant", instructions="You are a helpful assistant.", model="gpt-5.5")
 
 
-async def chat(user: User, message: str) -> str:
-    result = await Runner.run(agent, message, context=user, run_config=memory.run_config())
-    await memory.remember(user, message, result)                   # the exchange, saved to that user's space
+async def chat(user: User, chat_id: str, message: str) -> str:
+    session = SQLiteSession(chat_id)                                # or your own store of the conversation
+    result = await Runner.run(agent, message, context=user, session=session, run_config=memory.run_config())
+    await memory.save(user, result, session=chat_id)               # the run, saved into that conversation
     return result.final_output
 ```
 
-- **Before each model call**, what is known that bears on the user's latest message goes in the instructions,
-  after the agent's own. In a run with tools, Geniffy is asked once, not once per step.
-- **`remember()`** saves the exchange: the user's words become facts about the user.
+- **Before each model call**, the user's briefing goes in the instructions, after the agent's own: where things
+  stand, what is due or was promised, the rules that apply, what happened, then what is known that bears on their
+  latest message, each line dated. In a run with tools, Geniffy is asked once, not once per step.
+- **`save()`** keeps the run that just finished: what the user said, each tool the agent called and what it
+  returned, and the answer. A conversation is one memory however long it gets; the history a session hands the run
+  is not sent again, and a save that fails goes with the conversation's next one. Without `session=`, each run is
+  a memory of its own.
 - **If Geniffy can't be reached**, the run goes on without memory, and `on_error` hears about it.
 
 `run_config()` takes your own `RunConfig` and adds the memory to it; a `call_model_input_filter` you already
-have runs after it. Options: `instructions` to change what the model is told about the memory, and `client` to
-share your own `geniffy.AsyncGeniffy`. Without one, a client is made for each event loop and shared.
+have runs after it.
+
+Options: `project` (a string, or a function of the context) keeps the briefing to one project and labels what is
+saved with it; `session` names the conversation the same way, so `save()` needs no `session=`; `briefing=False`
+reads only what bears on the user's latest message; `budget_chars` is the most the briefing adds (6,000 characters
+unless you say); `instructions` changes what the model is told about the memory; and `client` shares your own
+`geniffy.AsyncGeniffy`. Without one, a client is made for each event loop and shared. An account without the
+briefing switched on is given what bears on the latest message instead, and the briefing is tried again ten
+minutes later. `remember(user, message, result)` still saves a single exchange, without the tool calls.
 
 ## Tools
 
@@ -76,7 +88,8 @@ When a user deletes their account, forget them with `AsyncGeniffy().forget_space
 ## Develop
 
 ```bash
-pip install -e ".[test]" && pytest     # through the SDK's own Runner, with its ScriptedModel
+pip install -e ".[test]" && pytest     # through the SDK's own Runner, with its ScriptedModel, and the real
+                                       # geniffy client against a stand-in for the API
 ```
 
 ## Security

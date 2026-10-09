@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.2.0
+
+- **The briefing.** Before each model call the instructions get the user's briefing: where things stand, what is
+  due or was promised, the rules that apply, what happened, then what is known that bears on their latest message,
+  each line dated. `project=` keeps it to one project, `budget_chars=` caps it, and `briefing=False` reads only what
+  bears on the question, as 0.1 did. An account without the briefing switched on gets that too, and the briefing is
+  tried again ten minutes later. A briefing with nothing in it yet says so, so the model never reads silence as
+  permission to guess.
+- **`await memory.save(context, result, session=...)`** keeps the whole run, each tool call and its output included,
+  in one memory for the conversation. The history an Agents SDK session hands the run is not sent again, a save that
+  fails goes with the conversation's next one, and over 500 messages go 500 at a time. Hosted tools (web search,
+  file search, code, a computer) are kept as the call, without what they brought back; reasoning is left out.
+  `session=` on `GeniffyMemory` (a string or a function of the context) names the conversation for every save.
+- `remember(context, message, result)` still saves one exchange, and takes `session=`.
+- Needs `geniffy` 0.4.0 or later.
+
 ## 0.1.0
 
 The first release.

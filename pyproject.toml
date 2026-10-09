@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "openai-agents-geniffy"
-version = "0.1.0"
+version = "0.2.0"
 description = "Geniffy for the OpenAI Agents SDK: a memory of each of your users, for any agent. Memory in the instructions, and tools."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -18,7 +18,7 @@ classifiers = [
   "Programming Language :: Python :: 3",
   "Topic :: Software Development :: Libraries",
 ]
-dependencies = ["openai-agents>=0.23,<1", "geniffy>=0.1.1"]
+dependencies = ["openai-agents>=0.23,<1", "geniffy>=0.4.0"]
 
 [project.optional-dependencies]
 test = ["pytest>=7"]
